@@ -4,10 +4,11 @@
 #include <math.h>
 #include <AccelStepper.h>
 
-#define Kp 0;
-#define Kd 0.05;
-#define Ki 40;
-#define targetAngle=0;
+#define Kp 1
+#define Kd 0.05
+#define Ki 40
+#define targetAngle 0
+#define maxPid 1000
 
 Adafruit_MPU6050 mpu;
 
@@ -16,21 +17,21 @@ AccelStepper leftMotor(1,D3,D4); //(type of driver, step,dir)
 AccelStepper rightMotor(1,D6,D7);
 
 int16_t accX,accY,accZ,gyroX;
-int motorPower;
+float motorPower;
 float roll_angle,pitch_angle,gyroAngle,currentAngle=0,previousAngle=0, error, prevError=0, errorSum=0;
 unsigned long currTime,prevTime=0,loopTime;
+float iTerm, dTerm;
 
-void setMotor(leftMotor,rightMotor) 
+void setMotor(float motorPower) 
 { 
   //run left motor
   leftMotor.setSpeed(motorPower);
-  left.Motor.runSpeed();
+  leftMotor.runSpeed();
   
   //run right motor
-  rightMotor.setSpeed(motorPower);
+  rightMotor.setSpeed(-motorPower);
   rightMotor.runSpeed();
 
-  delay(1000);
 }
 
 void setup() {  
@@ -111,7 +112,7 @@ void setup() {
   rightMotor.setMaxSpeed(1000);
   
   Serial.println(" ");
-  delay(100);
+  
 }
 
 void loop()
@@ -124,7 +125,7 @@ void loop()
   mpu.getEvent(&a, &g, &temp);
 
   motorPower = constrain(motorPower, -1000, 1000); 
-  setMotor(motorPower,motorPower);
+  setMotor(motorPower);
 
   //acceleromter calculation 
   accX=a.acceleration.x;
@@ -134,30 +135,8 @@ void loop()
   roll_angle=atan(accY/sqrt(accX*accX+accZ*accZ))*1/(3.142/180);
   pitch_angle=-atan(accX/sqrt(accY*accY+accZ*accZ))*1/(3.142/180);
 
-
-  
-
-  Serial.print("acceleromter values : \n");
-  Serial.print("x-axis:\n");
-  Serial.println(accX);
-  Serial.print("y-axis:\n");
-  Serial.println(accY);
-  Serial.print("z-axis:\n");
-  Serial.println(accZ);
-
-  Serial.print("\n angle values: \n");
-  
-  Serial.print("roll: \n");
-  Serial.println(roll_angle);
-  Serial.print(" ");
-  Serial.print("pitch: \n");
-  Serial.println(pitch_angle);
-  Serial.print(" ");
-
   //gyro calculation 
   gyroX=g.gyro.x;
-  Serial.print("Gyroscope value: \n");
-  Serial.println(gyroX);
   gyroAngle=gyroAngle+(float)gyroX*loopTime/1000;
   Serial.print("\nGyro Angle:");
   Serial.println(gyroAngle);
@@ -171,12 +150,17 @@ void loop()
   //setting up PID
   error=currentAngle-targetAngle;
   errorSum=errorSum+error;
+  //integral term
+  iTerm=errorSum*loopTime/1000;
+  //differentiate term
+  dTerm=(currentAngle-previousAngle)/(loopTime/1000);
   //calculating output 
-  motorPower= Kp*(error)+Ki*(errorSum)*loopTime/1000-Kd*(currentAngle-previousAngle)/(loopTime/1000);
+  motorPower= (Kp*error)+ (Ki*iTerm) + (Kd*dTerm);
   previousAngle=currentAngle;
+  Serial.print("Motor Speed: ");
   Serial.println(motorPower);
+
+  if (motorPower > maxPid) motorPower = maxPid;
+  else if (motorPower < -maxPid) motorPower = -maxPid;
   
-  
-  
-  delay(1000);
 }

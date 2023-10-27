@@ -20,7 +20,7 @@ void loop()
   leftMotor.runSpeed();
   
   //run right motor
-  rightMotor.setSpeed(800);
+  rightMotor.setSpeed(-800);
   rightMotor.runSpeed();
 
   
