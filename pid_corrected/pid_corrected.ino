@@ -54,9 +54,8 @@ void setup() {
   leftMotor.setMaxSpeed(1000);
   rightMotor.setMaxSpeed(1000);
 ​
-  Serial.println("");
-}
-​
+  Serial.println(" ");
+}​
 void loop()
 {
   currTime = millis();
