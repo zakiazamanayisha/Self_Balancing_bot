@@ -155,10 +155,19 @@ void loop()
   error=currentAngle-targetAngle;
   errorSum=errorSum+error;
   //integral term
-  iTerm=errorSum*loopTime;
+  iTerm=errorSum*(loopTime/1000);
   //differentiate term
-  dTerm=(currentAngle-previousAngle)/loopTime;
+  dTerm=(currentAngle-previousAngle)/(loopTime/1000);
   //calculating output 
+  if (loopTime > 0) {
+    iTerm = errorSum * (loopTime / 1000.0);
+    dTerm = (currentAngle - previousAngle) / (loopTime / 1000.0);
+} 
+  else {
+    // Handle the case where loopTime is zero to avoid division by zero
+    iTerm = 0;
+    dTerm = 0;
+}
   motorPower= (Kp*error)+ (Ki*iTerm) + (Kd*dTerm);
   previousAngle=currentAngle;
   Serial.print("Motor Speed: ");
