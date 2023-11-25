@@ -4,11 +4,11 @@
 #include <math.h>
 #include <AccelStepper.h>
 
-#define Kp 1
-#define Kd 0.05
-#define Ki 40
+#define Kp 50
+#define Kd 0
+#define Ki 0 
 #define targetAngle 0
-#define maxPid 1000
+#define maxPid 10000000
 
 Adafruit_MPU6050 mpu;
 
@@ -29,7 +29,7 @@ void setMotor(float motorPower)
   leftMotor.runSpeed();
   
   //run right motor
-  rightMotor.setSpeed(-motorPower);
+  rightMotor.setSpeed(motorPower);
   rightMotor.runSpeed();
 
 }
@@ -107,9 +107,12 @@ void setup() {
     Serial.println("5 Hz");
     break;
   }
+
   // set maximum speed 
-  leftMotor.setMaxSpeed(1000);
-  rightMotor.setMaxSpeed(1000);
+  leftMotor.setMaxSpeed(10000000);
+  leftMotor.setAcceleration(10000);
+  rightMotor.setMaxSpeed(10000000);
+  rightMotor.setAcceleration(10);
   
   Serial.println(" ");
   
@@ -139,6 +142,7 @@ void loop()
   gyroX=g.gyro.x;
   gyroAngle=gyroAngle+(float)gyroX*loopTime/1000;
   Serial.print("\nGyro Angle:");
+  Serial.println(gyroX);
   Serial.println(gyroAngle);
   Serial.print(" ");
   
@@ -151,9 +155,9 @@ void loop()
   error=currentAngle-targetAngle;
   errorSum=errorSum+error;
   //integral term
-  iTerm=errorSum*loopTime/1000;
+  iTerm=errorSum*loopTime;
   //differentiate term
-  dTerm=(currentAngle-previousAngle)/(loopTime/1000);
+  dTerm=(currentAngle-previousAngle)/loopTime;
   //calculating output 
   motorPower= (Kp*error)+ (Ki*iTerm) + (Kd*dTerm);
   previousAngle=currentAngle;
